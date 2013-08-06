@@ -667,7 +667,9 @@ cnt_fetchbody(struct sess *sp)
 	uint16_t nhttp;
 	unsigned l;
 	struct vsb *vary = NULL;
+	struct vsb *key = NULL;
 	int varyl = 0, pass;
+	int keyl = 0;
 
 	assert(sp->handling == VCL_RET_HIT_FOR_PASS ||
 	    sp->handling == VCL_RET_DELIVER);
@@ -755,11 +757,21 @@ cnt_fetchbody(struct sess *sp)
 	/* Create Vary instructions */
 	if (sp->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-		vary = VRY_Create(sp, sp->wrk->beresp);
-		if (vary != NULL) {
-			varyl = VSB_len(vary);
-			assert(varyl > 0);
-			l += varyl;
+		key = KEY_Create(sp, sp->wrk->beresp);
+		if (key == NULL) {
+			sp->wrk->exp.ttl = 0;
+			sp->wrk->exp.grace = 0.0;
+			sp->wrk->exp.keep = 0.0;
+			vary = VRY_Create(sp, sp->wrk->beresp);
+			if (vary != NULL) {
+				varyl = VSB_len(vary);
+				assert(varyl > 0);
+				l += varyl;
+			}
+		} else {
+			keyl = VSB_len(key);
+			assert(keyl > 0);
+			l += keyl;
 		}
 	}
 
@@ -799,6 +811,14 @@ cnt_fetchbody(struct sess *sp)
 	if (sp->wrk->do_gzip || (sp->wrk->is_gzip && !sp->wrk->do_gunzip))
 		sp->obj->gziped = 1;
 
+	if (key != NULL) {
+		sp->obj->key =
+		    (void *)WS_Alloc(sp->obj->http->ws, keyl);
+		AN(sp->obj->key);
+		memcpy(sp->obj->key, VSB_data(key), keyl);
+		KEY_Validate(sp->obj->key);
+		VSB_delete(key);
+	}
 	if (vary != NULL) {
 		sp->obj->vary =
 		    (void *)WS_Alloc(sp->obj->http->ws, varyl);

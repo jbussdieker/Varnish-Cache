@@ -491,6 +491,7 @@ struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
 	uint8_t			*vary;
+	uint8_t			*key;
 };
 
 /* Object structure --------------------------------------------------*/
@@ -507,6 +508,7 @@ struct object {
 	struct ws		ws_o[1];
 
 	uint8_t			*vary;
+	uint8_t			*key;
 	unsigned		hits;
 	uint16_t		response;
 
@@ -774,6 +776,7 @@ void http_SetH(const struct http *to, unsigned n, const char *fm);
 void http_ForceGet(const struct http *to);
 void http_Setup(struct http *ht, struct ws *ws);
 int http_GetHdr(const struct http *hp, const char *hdr, char **ptr);
+unsigned http_EnumHdr(const struct http *hp, int offset, const char *hdr, char **ptr);
 int http_GetHdrData(const struct http *hp, const char *hdr,
     const char *field, char **ptr);
 int http_GetHdrField(const struct http *hp, const char *hdr,
@@ -905,6 +908,11 @@ void RES_WriteObj(struct sess *sp);
 void RES_StreamStart(struct sess *sp);
 void RES_StreamEnd(struct sess *sp);
 void RES_StreamPoll(const struct sess *sp);
+
+/* cache_key.c */
+struct vsb *KEY_Create(const struct sess *sp, const struct http *hp);
+int KEY_Match(struct http *http, const uint8_t *key);
+void KEY_Validate(const uint8_t *key);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);

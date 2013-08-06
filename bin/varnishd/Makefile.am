@@ -35,6 +35,7 @@ varnishd_SOURCES = \
 	cache_http.c \
 	cache_httpconn.c \
 	cache_main.c \
+	cache_key.c \
 	cache_lck.c \
 	cache_panic.c \
 	cache_pipe.c \

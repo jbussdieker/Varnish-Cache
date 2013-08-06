@@ -355,6 +355,10 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			if (sp->hash_ignore_busy)
 				continue;
 
+			if (oc->busyobj->key != NULL &&
+			    !KEY_Match(sp->http, oc->busyobj->key))
+				continue;
+
 			if (oc->busyobj->vary != NULL &&
 			    !VRY_Match(sp, oc->busyobj->vary))
 				continue;
@@ -371,6 +375,8 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		if (BAN_CheckObject(o, sp))
 			continue;
 		if (o->vary != NULL && !VRY_Match(sp, o->vary))
+			continue;
+		if (o->key != NULL && !KEY_Match(sp->http, o->key))
 			continue;
 
 		/* If still valid, use it */
