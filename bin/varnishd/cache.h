@@ -910,7 +910,7 @@ void RES_StreamEnd(struct sess *sp);
 void RES_StreamPoll(const struct sess *sp);
 
 /* cache_key.c */
-struct vsb *KEY_Create(const struct sess *sp, const struct http *hp);
+int KEY_Create(const struct sess *sp, const struct http *hp, struct vsb **psb);
 int KEY_Match(struct http *http, const uint8_t *key);
 void KEY_Validate(const uint8_t *key);
 

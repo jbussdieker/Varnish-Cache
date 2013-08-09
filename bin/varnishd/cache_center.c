@@ -757,21 +757,23 @@ cnt_fetchbody(struct sess *sp)
 	/* Create Vary instructions */
 	if (sp->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-		key = KEY_Create(sp, sp->wrk->beresp);
-		if (key == NULL) {
+		keyl = KEY_Create(sp, sp->wrk->beresp, &key);
+		if (keyl > 0) {
+			AN(key);
+			assert(keyl == VSB_len(key));
+			l += keyl;
+		} else if (keyl < 0) {
 			sp->wrk->exp.ttl = 0;
 			sp->wrk->exp.grace = 0.0;
 			sp->wrk->exp.keep = 0.0;
+			AZ(key);
+		} else {
 			vary = VRY_Create(sp, sp->wrk->beresp);
 			if (vary != NULL) {
 				varyl = VSB_len(vary);
 				assert(varyl > 0);
 				l += varyl;
 			}
-		} else {
-			keyl = VSB_len(key);
-			assert(keyl > 0);
-			l += keyl;
 		}
 	}
 

@@ -317,10 +317,9 @@ key_len(const uint8_t *p)
 	return (3 + p[3] + 2 + (l == 0xffff ? 0 : l));
 }
 
-struct vsb *
-KEY_Create(const struct sess *sp, const struct http *hp)
+int
+KEY_Create(const struct sess *sp, const struct http *hp, struct vsb **psb)
 {
-	printf("KEY_Create()\n");
 	char *v, *h, *e, *p, *q;
 	struct vsb *sb, *sbh, *sbm;
 	unsigned l;
@@ -436,7 +435,7 @@ KEY_Create(const struct sess *sp, const struct http *hp)
 		VSB_delete(sbh);
 		VSB_delete(sbm);
 		VSB_delete(sb);
-		return (0);
+		return (-1);
 	}
 
 	/* Terminate key matching string */
@@ -449,28 +448,25 @@ KEY_Create(const struct sess *sp, const struct http *hp)
 	if (KEY_Match(sp->http, VSB_data(sb)) == 0) {
 		WSP(sp, SLT_Error, "Cache key doesn't match request");
 		VSB_delete(sb);
-		return 0;
+		return -1;
 	}
 
-	printf("KEY_Create() - normal\n");
-	return (sb);
+        *psb = sb;
+	return (VSB_len(sb));
 }
 
 void
 KEY_Validate(const uint8_t *key)
 {
-	printf("KEY_Validate()\n");
 	while (key[3] != 0) {
 		assert(strlen((const char*)key+4) == key[3]);
 		key += key_len(key);
 	}
-	printf("KEY_Validate() - normal\n");
 }
 
 int
 KEY_Match(struct http *http, const uint8_t *key)
 {
-	printf("KEY_Match()\n");
 	char *h;
 	int i;
 	int result = 1;
@@ -524,7 +520,6 @@ KEY_Match(struct http *http, const uint8_t *key)
 				switch (matcher[0]) {
 					case M_WORD:
 						while (u = http_EnumHdr(http, u, (const char*)(key+3), &h)) {
-							printf("   - SUBRESULT\n");
 							subresult |= word_matcher(m, h, strlen(m), case_flag);
 						}
 						if (!(subresult ^ not_flag))
@@ -575,6 +570,5 @@ KEY_Match(struct http *http, const uint8_t *key)
 		key += key_len(key);
 	}
 
-	printf("KEY_Match() - normal = %d\n", result);
 	return result;
 }
